@@ -68,7 +68,7 @@ export default function TrendChart({ days }) {
   maintainAspectRatio: false,
   layout: {
     padding: { left: 10, right: 4 },
-  }, REQUIRED — lets CSS control the height
+  }, //REQUIRED — lets CSS control the height
     plugins: {
       legend: {
         display: false, // we label it in the section title instead
