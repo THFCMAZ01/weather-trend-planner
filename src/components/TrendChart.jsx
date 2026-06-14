@@ -1,7 +1,3 @@
-// TrendChart.jsx
-// Chart.js v4 REQUIRES manual registration of every component used.
-// Missing any registration = silent blank chart with zero error messages.
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,7 +11,6 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 
-// Register once at module level — NOT inside the component function
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -27,10 +22,7 @@ ChartJS.register(
   Legend
 );
 
-// Props:
-//   days: [{ date, temp, condition, rainProb }]
 export default function TrendChart({ days }) {
-  // Format x-axis labels: "2025-04-01" → "Mon, Apr 1"
   const labels = days.map((d) =>
     new Date(`${d.date}T12:00:00`).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -40,6 +32,10 @@ export default function TrendChart({ days }) {
   );
 
   const temps = days.map((d) => d.temp);
+
+  // Compute clean Y-axis min/max to avoid floating point tick values
+  const minTemp = Math.floor(Math.min(...temps)) - 1;
+  const maxTemp = Math.ceil(Math.max(...temps)) + 1;
 
   const data = {
     labels,
@@ -64,15 +60,13 @@ export default function TrendChart({ days }) {
   };
 
   const options = {
-  responsive: true,
-  maintainAspectRatio: false,
-  layout: {
-    padding: { left: 10, right: 4 },
-  }, //REQUIRED — lets CSS control the height
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: { left: 8, right: 8, top: 8, bottom: 4 },
+    },
     plugins: {
-      legend: {
-        display: false, // we label it in the section title instead
-      },
+      legend: { display: false },
       tooltip: {
         backgroundColor: '#0d1b33',
         borderColor: 'rgba(56, 189, 248, 0.3)',
@@ -83,7 +77,7 @@ export default function TrendChart({ days }) {
         displayColors: false,
         callbacks: {
           title: (items) => items[0].label,
-          label: (ctx) => ` ${ctx.parsed.y}°C`,
+          label: (ctx) => ` ${ctx.parsed.y.toFixed(1)}°C`,
         },
       },
     },
@@ -91,23 +85,31 @@ export default function TrendChart({ days }) {
       x: {
         grid: {
           color: 'rgba(56, 189, 248, 0.06)',
-          drawBorder: false,
         },
         ticks: {
           color: '#5a7a96',
-          font: { family: 'Outfit', size: 12 },
-          maxRotation: 0,
+          font: { family: 'Outfit', size: 11 },
+          maxRotation: 30,
+          minRotation: 0,
+          // autoSkip prevents label cramming on small screens
+          autoSkip: true,
+          maxTicksLimit: 5,
         },
       },
       y: {
+        // Force integer-based min/max so Chart.js picks clean tick steps
+        min: minTemp,
+        max: maxTemp,
         grid: {
           color: 'rgba(56, 189, 248, 0.06)',
-          drawBorder: false,
         },
         ticks: {
           color: '#5a7a96',
           font: { family: 'Space Mono', size: 11 },
-          callback: (val) => `${val}°`,
+          // stepSize forces whole-number ticks — kills the .40000000002 bug
+          stepSize: 1,
+          // Round whatever Chart.js passes just to be double-safe
+          callback: (val) => `${Math.round(val)}°`,
         },
       },
     },
